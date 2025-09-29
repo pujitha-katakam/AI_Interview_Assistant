@@ -1,2 +1,1 @@
-web: gunicorn Swipe.Assistant:app
-
+web: uvicorn assistant:app --host 0.0.0.0 --port $PORT
