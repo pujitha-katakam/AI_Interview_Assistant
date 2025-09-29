@@ -8,7 +8,7 @@ import json
 import re
 import random
 from io import BytesIO
-import openai
+from openai import OpenAI
 import os
 from datetime import datetime
 from constants import OPENAI_API_KEY, APP_HOST, APP_PORT
@@ -41,11 +41,15 @@ except ImportError:
 app = FastAPI(title="Interview Assistant API", version="1.0.0")
 
 # Initialize OpenAI client
-from openai import OpenAI
-client = OpenAI(api_key=OPENAI_API_KEY)
-if not OPENAI_API_KEY or OPENAI_API_KEY == "your-openai-api-key-here":
-    print("Warning: OPENAI_API_KEY not configured in constants.py")
+# Read API key directly from environment
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+APP_HOST = os.getenv("APP_HOST", "0.0.0.0")  # fallback if not set
+APP_PORT = int(os.getenv("APP_PORT", 8000))  # fallback if not set
 
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+if not OPENAI_API_KEY:
+    print("Warning: OPENAI_API_KEY not configured in environment variables")
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
