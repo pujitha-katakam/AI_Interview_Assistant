@@ -4,3 +4,6 @@ python-dotenv
 openai 
 pypdf 
 python-docx 
+"groq" 
+groq==0.32.0
+groq 
