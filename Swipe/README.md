@@ -1,136 +1,5 @@
 <<<<<<< HEAD
-# 🤖 AI-Powered Interview Assistant – Swipe
-
-A full-stack **Interview Assistant Web App** that streamlines resume parsing, candidate interview, feedback, interviewer page with all candidates data and scores..  
-Built with **React + Vite + Redux + TailwindCSS** for the frontend and a **Python backend**, it helps recruiters and candidates manage interviews efficiently with automated scoring and feedback.
-
----
-
-## 🚀 Features
-- 📂 **Resume Upload & Parsing** – Extracts key information from PDF/DOCX resumes   
-- 📝 **Interactive Assessments** – Timed questions with real-time scoring  
-- 📊 **Feedback & Insights** – Provides AI-powered evaluation for candidates  
-- 💾 **Persistent State** – Saves progress with Redux-Persist  
-- 🎨 **Modern UI** – Responsive design using TailwindCSS & Radix UI components  
-
----
-
-## 🛠️ Tech Stack
-| Layer       | Technologies Used                       |
-|-------------|-----------------------------------------|
-| Frontend    | React, Vite, Redux Toolkit, TailwindCSS, Radix UI |
-| Backend     | Python (`Assistant.py`), FastAPI/Flask *(as configured)* |
-| Build Tools | Vite, ESLint, PostCSS                    |
-| Deployment  | Works cross-platform with `install.sh` / `start.sh` |
-
----
-
-## 📦 Installation
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/pujitha-katakam/-AI-Powered-Interview-Assistant-Crisp-.git
-cd AI-Powered-Interview-Assistant-Crisp-
-
-2. Install Frontend Dependencies
-npm install
-
-3. (Optional) Install Backend Dependencies
-pip install -r requirements.txt
-
-**▶️ Running the Application**
-##Start Frontend (Vite Dev Server)
-npm run dev
-**Start Backend (Python)**
-npm run dev:backend
-**Start Both Together**
-npm run dev:full
-
-
-
-## 📁 Project Structure
-
-Swipe/
-├─ .eslintrc.cjs                  # ESLint configuration
-├─ .gitignore                     # Ignored files for Git
-├─ Assistant.py                   # Python backend entry point
-├─ FINAL_STATUS.md                # Status documentation
-├─ README.md                       # Project documentation
-├─ SETUP_GUIDE.md                  # Setup instructions
-├─ STATUS_REPORT.md                # Progress report
-├─ constants.py                    # Python constants file
-├─ env.example                      # Example environment variables
-├─ index.html                       # Main HTML file for Vite
-├─ install.sh                        # Installation script (Linux/Mac)
-├─ install.bat                        # Installation script (Windows)
-├─ package.json                        # Frontend dependencies & scripts
-├─ package-lock.json                    # Dependency lock file
-├─ postcss.config.js                     # PostCSS configuration
-├─ requirements.txt                        # Python backend dependencies
-├─ requirements-dev.txt                      # Development Python dependencies
-├─ start.sh                                   # Startup script (Linux/Mac)
-├─ start.bat                                   # Startup script (Windows)
-├─ tailwind.config.js                            # TailwindCSS configuration
-├─ tsconfig.json                                  # TypeScript configuration
-├─ tsconfig.node.json                             # TypeScript config for Node
-├─ vite.config.ts                                  # Vite build configuration
-├─ test_resume.docx                                 # Sample resume for testing
-│
-├─ dist/                                            # Production build output
-│
-├─ src/                                             # Frontend source code
-│  ├─ assets/                                       # Images, icons, static files
-│  ├─ components/                                   # Reusable React components
-│  ├─ pages/                                        # Page-level React components
-│  ├─ store/                                        # Redux store & slices
-│  ├─ services/                                     # API and utility functions
-│  ├─ App.tsx                                       # Main React App component
-│  ├─ main.tsx                                      # App entry file
-│  └─ ...                                           # Other frontend utilities
-│
-└─ node_modules/                                    # Installed frontend dependencies
-
-
-
-## Screenshots
-
-
-
-![Homepage](screenshots/homepage.png)
-![Resume Parsing Page](screenshots/resume parsing page.png)
-![Resume Upload Page](screenshots/resume upload page.png)
-![Welcome Back Popup](screenshots/welcome back popup.png)
-![Interview Page](screenshots/interview page.png)
-![Feedback Page](screenshots/feedback page.png)
-![Interviewer Page](screenshots/interviewer page.png)
-![candidate details of interview ](screenshots/candidate profile and score.png)
-
-🤝 Contributing
-
-Contributions, issues, and feature requests are welcome!
-Feel free to fork the project and submit pull requests.
-
-📄 License
-
-This project is licensed under the MIT License.
-You’re free to use, modify, and distribute it with proper attribution.
-
-⭐ Acknowledgments
-
-Special thanks to open-source libraries and contributors that power this project.
-✅ Now your README reflects the **correct port (`3000`)** for running your project locally.
-
-
----
-
-## 🙏 Thank You!
-
-
-
-
-=======
-<<<<<<< HEAD
-# AI-Powered-Interview-Assistant-Crisp-
+# 🤖 AI-Powered Interview Assistant – Swipe 
 AI-Powered Interview Assistant is a full-stack Interview Assistant that streamlines resume parsing. Built with React, Vite, Redux, and a Python backend, it delivers a fast, modern, and responsive experience. Ideal for recruiters and candidates to manage interviews efficiently with scoring, feedback, and smooth UI.
 =======
 # Interview Assistant
@@ -454,3 +323,27 @@ The app can be deployed to any static hosting service:
 MIT License - see LICENSE file for details
 >>>>>>> d33bfa0 (Initial commit)
 >>>>>>> 70196f5 (Initial commit)
+
+## Screenshots
+
+
+
+![Homepage](Swipe/screenshots/homepage.png)
+![Resume Parsing Page](Swipe/screenshots/resumeparsingpage.png)
+![Resume Upload Page](Swipe/screenshots/resume upload page.png)
+![Welcome Back Popup](Swipe/screenshots/welcome back popup.png)
+![Interview Page](Swipe/screenshots/interview page.png)
+![Feedback Page](Swipe/screenshots/feedback page.png)
+![Interviewer Page](Swipe/screenshots/interviewer page.png)
+![candidate details of interview ](Swipe/screenshots/candidate profile and score.png)
+
+
+⭐ Acknowledgments
+
+Special thanks to open-source libraries and contributors that power this project.
+✅ Now your README reflects the **correct port (`3000`)** for running your project locally.
+
+
+---
+
+## 🙏 Thank You!
