@@ -1,0 +1,9 @@
+@echo off
+echo Starting Swipe Application...
+echo.
+echo Installing dependencies if needed...
+call npm install
+echo.
+echo Starting both frontend and backend...
+call npm run dev:full
+pause
