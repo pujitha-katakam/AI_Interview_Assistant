@@ -1,1 +1,2 @@
-web: gunicorn main:application
+web: gunicorn Swipe.Assistant:app
+
