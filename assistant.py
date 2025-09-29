@@ -1,6 +1,6 @@
 # assistant.py
 from fastapi import FastAPI
-from constant import API_KEY
+from constants import API_KEY
 
 app = FastAPI()
 
