@@ -11,7 +11,7 @@ from io import BytesIO
 from openai import OpenAI
 import os
 from datetime import datetime
-from constants import OPENAI_API_KEY, APP_HOST, APP_PORT
+
 
 # Import resume parsing utilities
 try:
@@ -41,16 +41,26 @@ except ImportError:
 app = FastAPI(title="Interview Assistant API", version="1.0.0")
 
 # Initialize OpenAI client
-# Read API key directly from environment
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Initialize OpenAI client
+# Read API key directly from environment for host/port config
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")  # fallback if not set
 APP_PORT = int(os.getenv("APP_PORT", 8000))  # fallback if not set
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Get API key to check its presence
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Initialize client. If OPENAI_API_KEY is None, the library will throw the error, 
+# but it's cleaner to use the environment variable directly without passing it.
+# If you must pass it, the previous structure is fine, assuming it loads.
+client = OpenAI(api_key=OPENAI_API_KEY) 
 
 if not OPENAI_API_KEY:
     print("Warning: OPENAI_API_KEY not configured in environment variables")
-# CORS middleware for frontend integration
+    # To prevent the crash, you might want to raise an exception 
+    # and stop the server if the key is mandatory:
+    # raise ValueError("OPENAI_API_KEY not found in environment.")
+    # 
+    # # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify your frontend domain
