@@ -1,3 +1,7 @@
+# added complete correct code in assist (assistant py)
+
+
+
 # assistant.py
 from fastapi import FastAPI
 from constants import API_KEY
