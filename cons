@@ -1,0 +1,79 @@
+
+import os
+from dotenv import load_dotenv
+import requests
+
+# ---------------------------
+# Load environment variables
+# ---------------------------
+load_dotenv()  # Loads .env file
+
+# API Keys (keep these in your .env, never hardcode)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+# ---------------------------
+# Application Settings
+# ---------------------------
+APP_HOST = "0.0.0.0"
+APP_PORT = int(os.getenv("PORT", 8000))  # Railway or other platforms can assign PORT
+APP_TITLE = "Interview Assistant API"
+APP_VERSION = "1.0.0"
+
+# ---------------------------
+# CORS Settings
+# ---------------------------
+ALLOWED_ORIGINS = ["*"]  # For production, set your frontend domain
+
+# ---------------------------
+# Question Generation Settings
+# ---------------------------
+DEFAULT_ROLE = "fullstack"
+DEFAULT_COUNTS = {"easy": 2, "medium": 2, "hard": 2}
+DEFAULT_SEED = 42
+
+# ---------------------------
+# Scoring Settings
+# ---------------------------
+DIFFICULTY_WEIGHTS = {"easy": 1.0, "medium": 1.75, "hard": 2.25}
+
+# ---------------------------
+# File Processing Settings
+# ---------------------------
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+SUPPORTED_FILE_TYPES = ["pdf", "docx"]
+MAX_TEXT_LENGTH = 5000
+
+# ---------------------------
+# GROQ API Helper Function
+# ---------------------------
+def query_groq(query: str):
+    """
+    Send a query to the GROQ API using the GROQ_API_KEY.
+    """
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY not found in environment variables!")
+
+    url = "https://api.groq.ai/v1/query"  # Update if your endpoint differs
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {"query": query}
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"GROQ API request failed: {response.status_code} - {response.text}")
+
+# ---------------------------
+# Example usage
+# ---------------------------
+# result = query_groq("your groq query here")
+# print(result)
+# constant.py
+import os
+
+API_KEY = os.environ.get("API_KEY")
+
