@@ -1,0 +1,297 @@
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
+from pydantic import BaseModel
+from typing import Dict, List, Optional
+import json
+import re
+import random
+from io import BytesIO
+import os
+from datetime import datetime
+import requests
+from constants import GROQ_API_KEY, APP_HOST, APP_PORT
+
+# Resume parsing utilities
+try:
+    import pdfminer.six.extract_text as extract_pdf_text
+except ImportError:
+    try:
+        import pypdf
+        def extract_pdf_text(file_stream):
+            reader = pypdf.PdfReader(file_stream)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text()
+            return text
+    except ImportError:
+        def extract_pdf_text(file_stream):
+            return "PDF parsing library not available"
+
+try:
+    from docx import Document
+    def extract_docx_text(file_stream):
+        doc = Document(file_stream)
+        return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+except ImportError:
+    def extract_docx_text(file_stream):
+        return "DOCX parsing library not available"
+
+# FastAPI initialization
+app = FastAPI(title="Interview Assistant API (GROQ)", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic models
+class QuestionRequest(BaseModel):
+    role: str = "fullstack"
+    counts: Dict[str, int] = {"easy": 2, "medium": 2, "hard": 2}
+    seed: Optional[int] = 42
+
+class QuestionResponse(BaseModel):
+    id: int
+    difficulty: str
+    question: str
+    timeLimit: int
+
+class ScoreRequest(BaseModel):
+    question: str
+    difficulty: str
+    answer: str
+
+class ScoreResponse(BaseModel):
+    score: int
+    feedback: str
+
+class QAItem(BaseModel):
+    question: str
+    answer: str
+    difficulty: str
+    score: Optional[int] = None
+
+class CandidateProfile(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+class FinalizeRequest(BaseModel):
+    items: List[QAItem]
+    profile: CandidateProfile
+
+class FinalizeResponse(BaseModel):
+    finalScore: int
+    summary: str
+
+class ResumeParseResponse(BaseModel):
+    name: Optional[str]
+    email: Optional[str]
+    phone: Optional[str]
+    rawText: str
+
+# GROQ utility functions
+def call_groq(prompt: str, max_tokens: int = 1000, temperature: float = 0.3) -> str:
+    """Call GROQ API with a text prompt"""
+    if not GROQ_API_KEY or GROQ_API_KEY == "your-groq-api-key":
+        return "GROQ API key not configured."
+    
+    url = "https://api.groq.ai/v1/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "groq-code-alpha",
+        "prompt": prompt,
+        "max_output_tokens": max_tokens,
+        "temperature": temperature
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("output_text", "")
+    except Exception as e:
+        print(f"GROQ API error: {str(e)}")
+        return f"Error: {str(e)}"
+
+# Fallback extraction functions
+def extract_name_fallback(text: str) -> Optional[str]:
+    lines = text.strip().split('\n')
+    for line in lines[:5]:
+        line = line.strip()
+        if not line: continue
+        skip_words = ['resume', 'cv', 'profile', 'summary']
+        if any(word in line.lower() for word in skip_words): continue
+        words = line.split()
+        if 2 <= len(words) <= 4 and all(word[0].isupper() for word in words if word.isalpha()):
+            return line
+    return None
+
+def extract_email_fallback(text: str) -> Optional[str]:
+    matches = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
+    return matches[0] if matches else None
+
+def extract_phone_fallback(text: str) -> Optional[str]:
+    patterns = [
+        r'\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}',
+        r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}',
+        r'\d{10}'
+    ]
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        if matches: return matches[0]
+    return None
+
+# Core logic using GROQ
+def extract_resume_fields_with_groq(raw_text: str) -> Dict[str, Optional[str]]:
+    prompt = f"""
+    Extract the candidate's name, email, and phone from this resume text. Return as JSON with keys: name, email, phone.
+    Resume text:
+    {raw_text[:3000]}
+    Return only JSON.
+    """
+    response = call_groq(prompt, max_tokens=300)
+    try:
+        result = json.loads(response)
+        return result
+    except:
+        return {
+            "name": extract_name_fallback(raw_text),
+            "email": extract_email_fallback(raw_text),
+            "phone": extract_phone_fallback(raw_text)
+        }
+
+def generate_questions_with_groq(role: str, counts: Dict[str, int], seed: int) -> List[QuestionResponse]:
+    random.seed(seed)
+    prompt = f"""
+    Generate interview questions for a {role} developer role. Include:
+    Easy: {counts.get('easy',0)}, Medium: {counts.get('medium',0)}, Hard: {counts.get('hard',0)}.
+    Return as JSON array with id, difficulty, question, timeLimit.
+    """
+    response = call_groq(prompt, max_tokens=1000, temperature=0.7)
+    try:
+        questions_data = json.loads(response)
+        questions = []
+        for i, q in enumerate(questions_data):
+            questions.append(QuestionResponse(
+                id=i+1,
+                difficulty=q.get("difficulty", "medium"),
+                question=q.get("question", ""),
+                timeLimit=q.get("timeLimit", 60)
+            ))
+        return questions
+    except:
+        # Fallback questions
+        fallback = [
+            QuestionResponse(id=1, difficulty="easy", question="What is React state?", timeLimit=20),
+            QuestionResponse(id=2, difficulty="medium", question="Explain Node.js event loop.", timeLimit=60),
+            QuestionResponse(id=3, difficulty="hard", question="Design a scalable chat app.", timeLimit=120)
+        ]
+        return fallback
+
+def score_answer_with_groq(question: str, difficulty: str, answer: str) -> ScoreResponse:
+    if not answer.strip():
+        return ScoreResponse(score=0, feedback="No answer provided.")
+    
+    prompt = f"""
+    Evaluate this answer to the question:
+    Question: {question}
+    Difficulty: {difficulty}
+    Answer: {answer}
+    Return JSON with keys: score (0-10), feedback (text)
+    """
+    response = call_groq(prompt, max_tokens=300)
+    try:
+        result = json.loads(response)
+        return ScoreResponse(score=result.get("score", 5), feedback=result.get("feedback",""))
+    except:
+        word_count = len(answer.split())
+        score = min(word_count // 5, 7)
+        feedback = f"Basic feedback: Your answer has {word_count} words. Elaborate more on technical concepts."
+        return ScoreResponse(score=score, feedback=feedback)
+
+def generate_final_summary_with_groq(items: List[QAItem], profile: CandidateProfile) -> FinalizeResponse:
+    difficulty_weights = {"easy":1.0, "medium":1.75, "hard":2.25}
+    total_weighted_score = sum((item.score or 0)*difficulty_weights.get(item.difficulty,1.0) for item in items)
+    total_weight = sum(difficulty_weights.get(item.difficulty,1.0) for item in items)
+    final_score = int((total_weighted_score / total_weight)*10) if total_weight>0 else 0
+
+    prompt = f"""
+    Generate a 2-3 sentence summary for candidate {profile.name or 'Unknown'} with score {final_score}/100.
+    Include strengths, areas for improvement, overall assessment.
+    """
+    response = call_groq(prompt, max_tokens=200)
+    if response.startswith("Error:"):
+        response = f"Interview completed. Final score: {final_score}/100."
+    
+    return FinalizeResponse(finalScore=final_score, summary=response)
+
+# API Endpoints
+@app.get("/")
+async def root():
+    return {"message": "Interview Assistant API (GROQ) is running"}
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "groq_configured": bool(GROQ_API_KEY and GROQ_API_KEY != "your-groq-api-key")
+    }
+
+@app.post("/parse-resume", response_model=ResumeParseResponse)
+async def parse_resume(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+    
+    ext = file.filename.lower().split('.')[-1]
+    if ext not in ['pdf','docx']:
+        raise HTTPException(status_code=400, detail="Only PDF and DOCX supported")
+    
+    content = await file.read()
+    stream = BytesIO(content)
+    raw_text = extract_pdf_text(stream) if ext=="pdf" else extract_docx_text(stream)
+    
+    if not raw_text or len(raw_text.strip())<50:
+        raise HTTPException(status_code=400, detail="Could not extract meaningful text")
+    
+    fields = extract_resume_fields_with_groq(raw_text)
+    
+    return ResumeParseResponse(
+        name=fields.get("name"),
+        email=fields.get("email"),
+        phone=fields.get("phone"),
+        rawText=raw_text[:5000]
+    )
+
+@app.post("/generate-questions")
+async def generate_questions(request: QuestionRequest):
+    return generate_questions_with_groq(request.role, request.counts, request.seed or 42)
+
+@app.post("/score-answer", response_model=ScoreResponse)
+async def score_answer(request: ScoreRequest):
+    return score_answer_with_groq(request.question, request.difficulty, request.answer)
+
+@app.post("/finalize", response_model=FinalizeResponse)
+async def finalize_interview(request: FinalizeRequest):
+    return generate_final_summary_with_groq(request.items, request.profile)
+
+@app.post("/test-groq")
+async def test_groq_connection():
+    response = call_groq("Respond with 'GROQ connection successful'", max_tokens=10)
+    return {
+        "status": "success" if "successful" in response else "error",
+        "response": response
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=APP_HOST, port=APP_PORT)
